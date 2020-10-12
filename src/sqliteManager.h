@@ -10,6 +10,11 @@
 #include <utility>
 #include <vector>
 
+/**
+ *
+ * @param i
+ * @return
+ */
 inline std::string formatInt(int i) {
     return i < 0 ? "NULL" : std::to_string(i);
 }
@@ -113,6 +118,12 @@ public:
         }
     }
 
+    /**
+     *
+     * @param name
+     * @param size
+     * @param parent_int
+     */
     void insertFileRecord(std::string name, int size, int parent_int) {
         files.emplace_back(name, size, parent_int);
         if (files.size() > flush_count) {
@@ -120,6 +131,9 @@ public:
         }
     }
 
+    /**
+     *
+     */
     void flushFileRecords() {
         if (files.empty()) {
             return;
