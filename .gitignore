@@ -4,3 +4,5 @@
 /CMakeCache.txt
 /folderList.cbp
 /*.db
+/CMakeFiles/
+/cmake-build-debug/
