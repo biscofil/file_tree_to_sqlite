@@ -23,20 +23,36 @@ void analyzeFolder(std::string path, SqliteManager &sql, int parentID) {
     }
 }
 
+std::string selectSourceFolder() {
+    char filename[1024];
+    FILE *f = popen(R"(zenity --file-selection --directory --title="Select a folder to scan")", "r");
+    fgets(filename, 1024, f);
+    std::string out = filename;
+    out.erase(out.find_last_not_of(" \n\r\t") + 1); // remove last char
+    return out;
+}
+
+std::string selectDestinationFile() {
+    char filename[1024];
+    FILE *f = popen(R"(zenity --file-selection --filename="out.db" --save --title="Select the output .db file")", "r");
+    fgets(filename, 1024, f);
+    std::string out = filename;
+    out.erase(out.find_last_not_of(" \n\r\t") + 1); // remove last char
+    return out;
+}
+
 int main() {
 
-    char filename[1024];
-    FILE *f = popen("zenity --file-selection --directory", "r");
-    fgets(filename, 1024, f);
-    std::string path = filename;
+    std::string sourceFolderPath = selectSourceFolder();
+    std::string destinationFilePath = selectDestinationFile();
 
-    path.erase(path.find_last_not_of(" \n\r\t")+1);
-    std::cout << "Reading '" << path << "'" << std::endl;
+    std::cout << "Reading '" << sourceFolderPath <<
+              "' and saving into '" << destinationFilePath << "'" << std::endl;
 
-    SqliteManager sqliteManager("test.db");
+    SqliteManager sqliteManager(destinationFilePath);
 
-    sqliteManager.insertFolderRecord(path, -1, -1);
+    sqliteManager.insertFolderRecord(sourceFolderPath, -1, -1);
     auto ID = sqliteManager.getLastInsertedID();
 
-    analyzeFolder(path, sqliteManager, ID);
+    analyzeFolder(sourceFolderPath, sqliteManager, ID);
 }
