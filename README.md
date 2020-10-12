@@ -18,6 +18,3 @@ Let's consider a folder `/` with two files `a`,`b` and a folder `c` containing `
 cmake .
 make
 ```
-
-# Known issues:
-* [ ] SQL error when folder/file has quotes '"' in the name

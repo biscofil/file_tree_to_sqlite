@@ -1,5 +1,6 @@
 #include <string>
 #include <filesystem>
+#include <cstring>
 #include "sqliteManager.h"
 
 namespace fs = std::filesystem;
@@ -25,8 +26,12 @@ void analyzeFolder(std::string path, SqliteManager &sql, int parentID) {
 
 std::string selectSourceFolder() {
     char filename[1024];
+    memset(filename, 0, 1024);
     FILE *f = popen(R"(zenity --file-selection --directory --title="Select a folder to scan")", "r");
     fgets(filename, 1024, f);
+    if (!strlen(filename)) {
+        exit(1);
+    }
     std::string out = filename;
     out.erase(out.find_last_not_of(" \n\r\t") + 1); // remove last char
     return out;
@@ -34,8 +39,12 @@ std::string selectSourceFolder() {
 
 std::string selectDestinationFile() {
     char filename[1024];
+    memset(filename, 0, 1024);
     FILE *f = popen(R"(zenity --file-selection --filename="out.db" --save --title="Select the output .db file")", "r");
     fgets(filename, 1024, f);
+    if (!strlen(filename)) {
+        exit(1);
+    }
     std::string out = filename;
     out.erase(out.find_last_not_of(" \n\r\t") + 1); // remove last char
     return out;
