@@ -14,11 +14,11 @@ void analyzeFolder(std::string path, SqliteManager &sql, int parentID) {
     for (const auto &entry : fs::directory_iterator(path)) {
         auto fn = entry.path().filename();
         if (entry.is_directory()) {
-            sql.log(fn, -1, parentID);
+            sql.insertFolderRecord(fn, -1, parentID);
             auto ID = sql.getLastInsertedID();
             analyzeFolder(entry.path(), sql, ID);
         } else {
-            sql.log(fn, entry.file_size(), parentID);
+            sql.insertFileRecord(fn, entry.file_size(), parentID);
         }
     }
 }
@@ -35,7 +35,7 @@ int main() {
 
     SqliteManager sqliteManager("test.db");
 
-    sqliteManager.log(path, -1, -1);
+    sqliteManager.insertFolderRecord(path, -1, -1);
     auto ID = sqliteManager.getLastInsertedID();
 
     analyzeFolder(path, sqliteManager, ID);

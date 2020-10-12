@@ -7,19 +7,39 @@
 
 #include <sqlite3.h>
 #include <iostream>
+#include <utility>
+#include <vector>
+
+inline std::string formatInt(int i) {
+    return i < 0 ? "NULL" : std::to_string(i);
+}
+
+class FileRecord {
+public:
+    std::string name;
+    int size;
+    int pid;
+
+    FileRecord(std::string n, int s, int p) : name(std::move(n)), size(s), pid(p) {}
+
+    std::string getSqlValuesStr() const {
+        return "('" + name + "', " + formatInt(pid) + ", " + formatInt(size) + ")";
+    }
+
+};
 
 /**
  *
  */
 class SqliteManager {
 private:
+
+    int flush_count = 5000;
+    std::vector<FileRecord> files;
+
     sqlite3 *db{};
     char *zErrMsg = 0;
     int rc;
-
-    inline std::string formatInt(int i) const {
-        return i < 0 ? "NULL" : std::to_string(i);
-    }
 
 public:
 
@@ -58,6 +78,7 @@ public:
 
         if (rc != SQLITE_OK) {
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            fprintf(stdout, "%s", sql.c_str());
             sqlite3_free(zErrMsg);
         }
         return rc;
@@ -70,7 +91,7 @@ public:
      * @param paren_int
      * @return
      */
-    void log(std::string name, int size, int parent_int) {
+    void insertFolderRecord(std::string name, int size, int parent_int) {
 
         /* Create SQL statement */
         std::string sql = "INSERT INTO files (name, pid, size) VALUES ('" + name + "', "
@@ -81,8 +102,43 @@ public:
 
         if (rc != SQLITE_OK) {
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            fprintf(stdout, "%s", sql.c_str());
             sqlite3_free(zErrMsg);
         }
+    }
+
+    void insertFileRecord(std::string name, int size, int parent_int) {
+        files.emplace_back(name, size, parent_int);
+        if (files.size() > flush_count) {
+            flushFileRecords();
+        }
+    }
+
+    void flushFileRecords() {
+        if (files.empty()) {
+            return;
+        }
+        std::string sql = "INSERT INTO files (name, pid, size) VALUES ";
+        bool first = true;
+        for (auto r : files) {
+            if (first) {
+                first = false;
+            } else {
+                sql += ",";
+            }
+            sql += r.getSqlValuesStr();
+        }
+        sql += ";";
+        rc = sqlite3_exec(db, sql.c_str(), nullptr, 0, &zErrMsg);
+
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            fprintf(stdout, "%s", sql.c_str());
+            sqlite3_free(zErrMsg);
+            return;
+        }
+        files.clear();
+
     }
 
     /**
@@ -102,6 +158,7 @@ public:
      *
      */
     ~SqliteManager() {
+        flushFileRecords();
         sqlite3_close(db);
     }
 
