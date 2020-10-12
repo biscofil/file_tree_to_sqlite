@@ -23,7 +23,7 @@ public:
     FileRecord(std::string n, int s, int p) : name(std::move(n)), size(s), pid(p) {}
 
     std::string getSqlValuesStr() const {
-        return "('" + name + "', " + formatInt(pid) + ", " + formatInt(size) + ")";
+        return "('" + name + "', " + formatInt(size) + ", " + formatInt(pid) + ")";
     }
 
 };
@@ -70,17 +70,23 @@ public:
      * @return
      */
     int create_table() {
-        /* Create SQL statement */
-        std::string sql = "CREATE TABLE files(id INTEGER PRIMARY KEY AUTOINCREMENT, name text NOT NULL, pid INT, size INT);";
-
-        /* Execute SQL statement */
+        std::string sql = "CREATE TABLE files(id INTEGER PRIMARY KEY AUTOINCREMENT, name text NOT NULL, size INT);";
         rc = sqlite3_exec(db, sql.c_str(), nullptr, 0, &zErrMsg);
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            fprintf(stdout, "%s", sql.c_str());
+            sqlite3_free(zErrMsg);
+            return rc;
+        }
 
+        sql = "ALTER TABLE files ADD COLUMN pid INT REFERENCES files(id);";
+        rc = sqlite3_exec(db, sql.c_str(), nullptr, 0, &zErrMsg);
         if (rc != SQLITE_OK) {
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
             fprintf(stdout, "%s", sql.c_str());
             sqlite3_free(zErrMsg);
         }
+
         return rc;
     }
 
@@ -95,8 +101,8 @@ public:
 
         /* Create SQL statement */
         std::string sql = "INSERT INTO files (name, pid, size) VALUES ('" + name + "', "
-                          + formatInt(parent_int) + ", "
-                          + formatInt(size) + ");";
+                          + formatInt(size) + ", "
+                          + formatInt(parent_int) + ");";
 
         rc = sqlite3_exec(db, sql.c_str(), nullptr, 0, &zErrMsg);
 
